@@ -7,7 +7,7 @@ import (
 )
 
 // for decompressing array data
-foreign_library        "miniz.lib" when ODIN_OS == "windows";
+foreign_system_library "miniz.lib" when ODIN_OS == "windows";
 foreign_system_library "miniz"     when ODIN_OS == "linux";
 
 foreign miniz {

@@ -1,14 +1,12 @@
 _ := compile_assert(ODIN_OS == "windows");
 
-import (
-	"fmt.odin";
-	"os.odin";
-	"mem.odin";
-)
+import "core:fmt.odin";
+import "core:os.odin";
+import "core:mem.odin";
 
 // for decompressing array data
-foreign_system_library "miniz.lib" when ODIN_OS == "windows";
-foreign_system_library "miniz"     when ODIN_OS == "linux";
+when ODIN_OS == "windows" do foreign_system_library "miniz.lib";
+when ODIN_OS == "linux"   do foreign_system_library "miniz";
 
 foreign miniz {
 	mz_uncompress :: proc(pDest: ^u8, pDest_len: ^u32, pSource: ^u8, source_len: u32) -> i32 ---;
@@ -39,65 +37,65 @@ Property_Record_Types :: enum rune {
 // @TODO: Replace "struct #raw_union" with a proper union?
 Property_Record_Data :: struct #raw_union {
 	// primary types
-	val_i64:  i64;
-	val_i32:  i32;
-	val_i16:  i16;
-	val_bool: bool;
-	val_f32:  f32;
-	val_f64:  f64;
+	val_i64:  i64,
+	val_i32:  i32,
+	val_i16:  i16,
+	val_bool: bool,
+	val_f32:  f32,
+	val_f64:  f64,
 
 	// array types
 	array: struct {
-		array_length:      u32;
-		encoding:          u32;
-		compressed_length: u32;
-		contents:          []u8;
-	};
+		array_length:      u32,
+		encoding:          u32,
+		compressed_length: u32,
+		contents:          []u8,
+	},
 
 	// special types
-	special_string: string;
-	special_raw: []u8;
+	special_string: string,
+	special_raw: []u8,
 };
 
 Property_Record :: struct {
-	type_code: Property_Record_Types;
-	using property_record_data: Property_Record_Data;
+	type_code: Property_Record_Types,
+	using property_record_data: Property_Record_Data,
 }
 
 Node_Record_Header :: struct #ordered #align 1 {
-	end_offset:         u32;
-	num_properties:     u32;
-	property_list_len:  u32;
-	name_len:           u8;
+	end_offset:         u32,
+	num_properties:     u32,
+	property_list_len:  u32,
+	name_len:           u8,
 };
 
 Node_Record :: struct {
-	using header:  Node_Record_Header;
-	root:               ^FBX;
+	using header:  Node_Record_Header,
+	root:               ^FBX,
 	
-	name:               string;
+	name:               string,
 
-	properties:         [dynamic]Property_Record;
-	nested_node_list:   [dynamic]Node_Record;
+	properties:         [dynamic]Property_Record,
+	nested_node_list:   [dynamic]Node_Record,
 
-	node_data:          []u8;
+	node_data:          []u8,
 };
 
 FBX :: struct {
 	using header: struct {
-		magic:      string;
-		unknown:    [2]u8;
-		version:    u32;
-	};
+		magic:      string,
+		unknown:    [2]u8,
+		version:    u32,
+	},
 
-	node_list:  [dynamic]Node_Record;
+	node_list:  [dynamic]Node_Record,
 	
-	fbx_data:       []u8;
+	fbx_data:       []u8,
 };
 
 size_from_type :: proc(t: Property_Record_Types) -> int {
 	using Property_Record_Types;
-	match t {
+	switch t {
 		case Value_Bool, Array_Bool:                             return 1;
 		case Value_Short:                                        return 2;
 		case Value_Int, Value_Float, Array_Int, Array_Float:     return 4;
@@ -132,7 +130,7 @@ load_fbx :: proc(filename: string) -> FBX {
 			s := size_from_type(Property_Record_Types(data[0]));
 			
 			using Property_Record_Types;
-			match type_code = Property_Record_Types(data[0]); type_code {
+			switch type_code = Property_Record_Types(data[0]); type_code {
 			// Primitive types
 			case Value_Long:   val_i64  = (cast(^i64)&data[1])^;  data = data[s+1..];
 			case Value_Int:    val_i32  = (cast(^i32)&data[1])^;  data = data[s+1..];
@@ -251,7 +249,7 @@ print_fbx :: proc(fbx: ^FBX) {
 				using property := properties[j];
 
 				// Primitive types
-				match type_code {
+				switch type_code {
 				case Value_Long:   println_indented(level+4, type_code, ":", val_i64);
 				case Value_Int:    println_indented(level+4, type_code, ":", val_i32);
 				case Value_Short:  println_indented(level+4, type_code, ":", val_i16);
@@ -301,27 +299,27 @@ print_fbx :: proc(fbx: ^FBX) {
 
 
 Model :: struct {
-	parts: []Geometry;
+	parts: []Geometry,
 }
 Geometry :: struct {
-	vertices: []f64;
-	indices: []i32;
+	vertices: []f64,
+	indices: []i32,
 
-	edges: []i32;
+	edges: []i32,
 
-	normals: []f64;
-	normals_winding: []f64;
+	normals: []f64,
+	normals_winding: []f64,
 
-	uv: []f64;
-	uv_indices: []i32;
+	uv: []f64,
+	uv_indices: []i32,
 
 	using transform: struct {
-		pre_rotation: [3]f64;
-		local_translation: [3]f64;
-		geometric_translation: [3]f64;
-	};
+		pre_rotation: [3]f64,
+		local_translation: [3]f64,
+		geometric_translation: [3]f64,
+	},
 
-	handle: i64;
+	handle: i64,
 
 }
 
